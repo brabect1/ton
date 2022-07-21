@@ -79,7 +79,7 @@ proc ton::num {json i c d} {
 	set float [expr {$float || [string match "\[eE.]" $c]}]
     }
     set num [string trimleft [string range $json $i $j]]
-    if {!$float && [string is entier $num]} {
+    if {!$float && [string is wideinteger $num]} {
 	    list $i "i $num"
     } elseif {$float && [string is double $num]} {
 	list $i "d $num"
