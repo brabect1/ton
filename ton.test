@@ -15,7 +15,14 @@ verbose {pass error}
 
 # ton is not very restrictive on escaped characters and octal or hex
 # numbers
+
+# The following constraint switches off some json2ton tests, which
+# test on backslash substitutions, which, on the other hand, is not
+# the task of json2ton, but of the respective decoder.
+#
+# This brings us to the topic, that we have no decoder tests...
 testConstraint StrictJSON false
+
 
 # Bugs in ton 0.1
 testConstraint ExtraBracketBugFixed true

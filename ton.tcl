@@ -13,7 +13,7 @@
 namespace eval ton {
     namespace export json2ton
 
-    variable version 0.4
+    variable version 0.5
     
 }
 proc ton::json2ton json {
@@ -231,6 +231,22 @@ namespace eval ton::a2dict {
     foreach type {i d l s} {
 	interp alias {} $type {} [namespace current]::atom
     }
+    proc a args {
+	set i -1
+	set r {}
+	foreach v $args {
+	    lappend r [incr i] $v
+	}
+	return $r
+    }
+    proc o args {return $args}
+}
+namespace eval ton::json2dict {
+    proc atom v {return $v}
+    foreach type {i d l} {
+	interp alias {} $type {} [namespace current]::atom
+    }
+    proc s v {subst -nocommands -novariables $v}
     proc a args {
 	set i -1
 	set r {}

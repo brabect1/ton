@@ -1,7 +1,7 @@
 Title:		*ton* and TON
 Subtitle:   Tcl Object Notation and some code to manipulate it
 Author:		Georg Lehner
-Copyright:	Georg Lehner <jorge@at.anteris.net>, 2018
+Copyright:	Georg Lehner <jorge@at.anteris.net>, 2018, 2019
 
 
 What is it
@@ -12,36 +12,58 @@ left and it is faster than other comparable tools, at least on Tcl8.6
 and in March 2018.
 
 
+How to use it
+-------------
+
+*ton* provides the `json2ton` function which convert a JSON string
+with a single value or object to the TON format - a data
+representation equivalent to JSON.
+
+TON can be converted into Tcl data structures by decoders which are
+trivial to write.
+
+To decode a JSON string in `$json` into the format returned by the
+Tcllib JSON parser use:
+
+	namespace eval ton::json2dict [ton::json2ton $json]]
+
+
 How it works
 ------------
 
-*ton* provides a function to convert a JSON string into TON - a data
-representation equivalent to JSON.  TON stands for Tcl Object
-Notation, every TON representation is a Tcl script.
+TON stands for Tcl Object Notation, every TON representation is a Tcl
+script.
 
 TON is decoded by defining six functions: `o`, `a`, `s`, `i`, `d` and
 `l`, which decode their argument(s) as object, array, string, number
 (`i` .. integer, `d` .. double float)  and literal respectively.
 
-*ton* provides namespaces with these function sets for decoding TON into:
+*ton* provides namespaces with these function sets for decoding TON
+ into:
 
 `ton::2list`:
 :    a nested Tcl lists
 
 `ton::2dict`:
-:    a Tcl dictionary in the same format as the jimhttp JSON parser.
+:    a Tcl dictionary with the same structure as returned by the
+	 jimhttp JSON parser (see note below).
 
 `ton::a2dict`:
+:    a Tcl dictionary with the same structure as returned by the
+     Tcllib JSON parser (see note below).
+
+`ton::json2dict`:
 :    a Tcl dictionary in the same format as the Tcllib JSON parser.
 
 `ton::2json`:
 :__  an unformatted JSON string.
 
-The function `ton::json2ton` converts a JSON string into TON. In order
-to convert a JSON dict in the variable `json` to the Tcllib dictionary
-format you would run the following:
 
-	namespace eval ton::2dict [ton::json2ton $json]]
+Note: All but the `json2dict` decoder return strings 'as is', without
+  backslash substitution.  `json2dict` uses the `subst` function for
+  backslash substitution which a) might not comply with JSON, b) might
+  not be 100% compatible with the Tcllib JSON parser.  Reports, tests
+  and fixes are welcome.
 
 
 How to choose a Tcl decoder
@@ -125,8 +147,15 @@ http://www.json.org/JSON_checker/ which we use to test ton.
 
 
 http://seriot.ch/parsing_json.php goes wild about (non)-compliance and
-missing clarity of specifications. It's test suite is here:
+missing clarity of specifications. Its test suite is here:
 https://github.com/nst/JSONTestSuite
+
+Changes in Version 0.5
+----------------------
+
+Added the `json2dict` decoder.  Thanks to [pozix604][] for pointing
+out the inconsistency in the documentation and make me take the time
+to work out a (trivial) solution.
 
 
 Bugs fixed in Version 0.3
@@ -169,3 +198,5 @@ White space in keys result in wrong or invalid TON.
 `ton::json2ton` will parse the rightmost valid JSON construct in a
 string, and terminate. No check is done for extra characters.
 
+
+[pozix604]: https://github.com/pozix604
