@@ -12,3 +12,48 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+lappend auto_path .
+package require ton;
+
+set json {{"foo":"bar","lst": [1,2,"3"],"obj": {"a":1,"b":2}}};
+
+set ton [ton::json2ton $json];
+puts "$ton";
+
+## puts "[lrange $ton 1 end]";
+## set l [dict get [lrange $ton 1 end] "foo"];
+## puts "$l";
+
+#set d [ton::a2dict $ton];
+#puts "[ton::2list::get $ton "foo" "bar"]";
+
+namespace eval ton::json2dict {
+    set d [eval $ton];
+    puts "$d";
+}
+
+namespace eval ton::2huddle {
+    proc s v {return [list s [subst -nocommands -novariables $v]]}
+    proc d v {return [list num $v]}
+    proc i v {return [list num $v]}
+    proc l v {return [list s $v]}
+    proc a args {
+        set i -1
+        set r {}
+        foreach v $args {
+            lappend r [incr i] $v
+        }
+        return [list l $r];
+    }
+    proc o args {
+        return [list D $args];
+    }
+
+    proc huddle ton {
+        return [list HUDDLE [eval $ton]];
+    }
+}
+
+set h [ton::2huddle::huddle $ton];
+puts "$h";
+
