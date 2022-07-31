@@ -12,3 +12,86 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+package require tcltest 2.0
+namespace import ::tcltest::*
+
+verbose {pass error}
+
+source [file join \
+     [file dirname [file join [pwd] [info script]]] \
+     ton2huddle.tcl]
+
+# ==================================================
+# tests ported from huddle.test
+# ==================================================
+namespace eval ton::2huddle::test {
+
+    test ton2huddle-1.1 "test of simple (1-level) dict" -body {
+        set upper {o a [s b] c [s d]};
+        set h [ton::2huddle::ton2huddle $upper];
+    } -result {HUDDLE {D {a {s b} c {s d}}}}
+
+    test ton2huddle-1.2 "test of 2-level dict" -body {
+        set upper2 {o e [s f] g [s h]};
+        set upper3 {o i [s j] k [s l]};
+        set folding [concat o bb "\[$upper\]" cc "\[$upper2\]"];
+        set h [ton::2huddle::ton2huddle $folding];
+    } -result {HUDDLE {D {bb {D {a {s b} c {s d}}} cc {D {e {s f} g {s h}}}}}}
+
+    test ton2huddle-1.3 "test of 3-level dict" -body {
+        set folding [concat o dd "\[$folding\]" ee "\[$upper3\]"];
+        set h [ton::2huddle::ton2huddle $folding];
+    } -result {HUDDLE {D {dd {D {bb {D {a {s b} c {s d}}} cc {D {e {s f} g {s h}}}}} ee {D {i {s j} k {s l}}}}}}
+
+    test ton2huddle-2.1 "test of simple (1-level) list" -body {
+        set upper {a [s a] [s b] [s c] [s d]}
+        set h [ton::2huddle::ton2huddle $upper];
+    } -result {HUDDLE {L {{s a} {s b} {s c} {s d}}}}
+
+    test ton2huddle-2.2 "test of 2-level list" -body {
+        set upper2 {a [s e] [s f] [s g] [s h]};
+        set folding [concat a {[s i]} "\[$upper\]" {[s j]} {[s k]} "\[$upper2\]"];
+        set h [ton::2huddle::ton2huddle $folding];
+    } -result {HUDDLE {L {{s i} {L {{s a} {s b} {s c} {s d}}} {s j} {s k} {L {{s e} {s f} {s g} {s h}}}}}}
+
+    test ton2huddle-2.3 "test of 3-level list" -body {
+        set folding [concat a "\[$folding\]" {[s t]} {[s u]}];
+        set h [ton::2huddle::ton2huddle $folding];
+    } -result {HUDDLE {L {{L {{s i} {L {{s a} {s b} {s c} {s d}}} {s j} {s k} {L {{s e} {s f} {s g} {s h}}}}} {s t} {s u}}}}
+
+    test ton2huddle-5.1 "test of boolean" -body {
+        set h [ton::2huddle::ton2huddle {l true}];
+    } -result {HUDDLE {b true}}
+
+    test ton2huddle-5.2 "test of boolean" -body {
+        set h [ton::2huddle::ton2huddle {l false}];
+    } -result {HUDDLE {b false}}
+
+    test ton2huddle-6.1 "test of null" -body {
+        set h [ton::2huddle::ton2huddle {l null}];
+    } -result {HUDDLE null}
+
+    test ton2huddle-7.1 "test of number" -body {
+        set h [ton::2huddle::ton2huddle {d -4.5E-6}];
+    } -result {HUDDLE {num -4.5E-6}}
+
+    test ton2huddle-7.2 "test of number" -body {
+        set h [ton::2huddle::ton2huddle {i 5}];
+    } -result {HUDDLE {num 5}}
+
+    test ton2huddle-8.1 "test of complex data structure using the new types: number, boolean and null" -body {
+        set ton {o key1 [s var1] key2 [d 4] key3 [a [l null] [s sadf] [l true]]};
+        set h [ton::2huddle::ton2huddle $ton];
+    } -result {HUDDLE {D {key1 {s var1} key2 {num 4} key3 {L {null {s sadf} {b true}}}}}}
+
+    cleanupTests
+}
+
+
+namespace delete ::ton::2huddle::test
+
+
+## set ton {o a [o b [s c]] 1 [o 2 [s 3]]}
+## puts "$ton";
+## set h [ton::2huddle::ton2huddle $ton];
+## puts "$h";
