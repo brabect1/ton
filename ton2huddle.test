@@ -15,11 +15,15 @@
 package require tcltest 2.0
 namespace import ::tcltest::*
 
+# ==================================================
+# Setup
+# ==================================================
 verbose {pass error}
 
 source [file join \
      [file dirname [file join [pwd] [info script]]] \
      ton2huddle.tcl]
+
 
 # ==================================================
 # tests ported from huddle.test
@@ -87,6 +91,225 @@ namespace eval ton::2huddle::test {
     cleanupTests
 }
 
+
+# ==================================================
+# tests ported from json2huddle.test
+# ==================================================
+namespace eval ton::2huddle::test {
+    test json2ton2huddle-1.1 "test of parsing json string" -setup {
+        set json { "hello world" };
+    } -body {
+	    set ton [ton::json2ton $json];
+        set h [ton::2huddle::ton2huddle $ton];
+    } -result {HUDDLE {s {hello world}}}
+
+    # this is like `json2ton2huddle-1.1` but uses the actual result of
+    # `huddle::json::json2huddle` than a hard-coded string
+    test json2ton2huddle-1.1-alt "test of parsing json string" -setup {
+        package require huddle::json;
+        set json { "hello world" };
+    } -body {
+	    set ton [ton::json2ton $json];
+        set h [ton::2huddle::ton2huddle $ton];
+    } -result [package require huddle::json; huddle::json::json2huddle parse $json]
+
+    test json2ton2huddle-1.2 "test of parsing json string" -setup {
+        set json { "Unicode characters: \u00e0\u00e8\u00ec\u00f2\u00f9\u00e1\u00e9\u00ed\u00f3\u00fa\u00e4\u00eb\u00ef\u00f6\u00fc" } 
+    } -body {
+        #package require huddle::json;
+        #huddle::json::json2huddle parse $json
+	    set ton [ton::json2ton $json];
+        set h [ton::2huddle::ton2huddle $ton];
+    } -result {HUDDLE {s {Unicode characters: àèìòùáéíóúäëïöü}}}
+
+    test json2ton2huddle-1.3 "test of parsing json string" -setup {
+        set json { "escaped tab:\tescaped quote \"" } 
+    } -body {
+	    set ton [ton::json2ton $json];
+        set h [ton::2huddle::ton2huddle $ton];
+    } -result {HUDDLE {s {escaped tab:	escaped quote "}}}
+
+    test json2ton2huddle-2.1 "test of parsing json number" -setup {
+        set json { 4 } 
+    } -body {
+	    set ton [ton::json2ton $json];
+        set h [ton::2huddle::ton2huddle $ton];
+    } -result {HUDDLE {num 4}}
+
+    test json2ton2huddle-2.2 "test of parsing json number" -setup {
+        set json { 2.7 } 
+    } -body {
+	    set ton [ton::json2ton $json];
+        set h [ton::2huddle::ton2huddle $ton];
+    } -result {HUDDLE {num 2.7}}
+
+    test json2ton2huddle-2.3 "test of parsing json number" -setup {
+        set json { -2.7e6 } 
+    } -body {
+	    set ton [ton::json2ton $json];
+        set h [ton::2huddle::ton2huddle $ton];
+    } -result {HUDDLE {num -2.7e6}}
+
+    test json2ton2huddle-2.3 "test of parsing json number" -setup {
+        set json { 2345E-4 } 
+    } -body {
+	    set ton [ton::json2ton $json];
+        set h [ton::2huddle::ton2huddle $ton];
+    } -result {HUDDLE {num 2345E-4}}
+
+    test json2ton2huddle-3.1 "test of parsing json boolean" -setup {
+        set json { true } 
+    } -body {
+	    set ton [ton::json2ton $json];
+        set h [ton::2huddle::ton2huddle $ton];
+    } -result {HUDDLE {b true}}
+
+    test json2ton2huddle-3.1 "test of parsing json boolean" -setup {
+        set json { false } 
+    } -body {
+	    set ton [ton::json2ton $json];
+        set h [ton::2huddle::ton2huddle $ton];
+    } -result {HUDDLE {b false}}
+
+    test json2ton2huddle-4.1 "test of parsing json null" -setup {
+        set json { null } 
+    } -body {
+	    set ton [ton::json2ton $json];
+        set h [ton::2huddle::ton2huddle $ton];
+    } -result {HUDDLE null}
+
+    test json2ton2huddle-5.1 "test of parsing json array" -setup {
+        set json { [1,2, "3", 4, null, false] } 
+    } -body {
+	    set ton [ton::json2ton $json];
+        set h [ton::2huddle::ton2huddle $ton];
+    } -result {HUDDLE {L {{num 1} {num 2} {s 3} {num 4} null {b false}}}}
+
+    test json2ton2huddle-5.2 "test of parsing json array" -setup {
+        set json { [ ] } 
+    } -body {
+	    set ton [ton::json2ton $json];
+        set h [ton::2huddle::ton2huddle $ton];
+    } -result {HUDDLE {L {}}}
+
+    test json2ton2huddle-6.1 "test of parsing json dict" -setup {
+        set json {  {"key1":"value1", "key2": 0, "key3": true,"key4":null} } 
+    } -body {
+	    set ton [ton::json2ton $json];
+        set h [ton::2huddle::ton2huddle $ton];
+    } -result {HUDDLE {D {key1 {s value1} key2 {num 0} key3 {b true} key4 null}}}
+
+    test json2ton2huddle-6.2 "test of parsing json dict" -setup {
+        set json {  {  } } 
+    } -body {
+	    set ton [ton::json2ton $json];
+        set h [ton::2huddle::ton2huddle $ton];
+    } -result {HUDDLE {D {}}}
+
+##---->>>> 6-Aug-2022: Comments are not part of JSON standard notation. They
+##         are a specific feature of `::huddle::json`.
+#    test json2ton2huddle-7.1 "test of parsing json comments" -setup {
+#    	set json { 
+#    		// this is a solidus double comment
+#    		 "this is a string"
+#    	}
+#    } -body {
+#	    set ton [ton::json2ton $json];
+#        set h [ton::2huddle::ton2huddle $ton];
+#    } -result {HUDDLE {s {this is a string}}}
+#
+#    test json2ton2huddle-7.2 "test of parsing json comments" -setup {
+#    	set json { 
+#    		/* c style
+#    				comment 
+#    				*/
+#    		 "this is a string"
+#    	}
+#    } -body {
+#	    set ton [ton::json2ton $json];
+#        set h [ton::2huddle::ton2huddle $ton];
+#    } -result {HUDDLE {s {this is a string}}}
+#
+#    test json2ton2huddle-7.2 "test of parsing json comments" -setup {
+#    	set json { 
+#    		/* c style
+#    				comment 
+#    				*/
+#    				// this is a solidus double comment
+#    		 "this is a string"
+#    		 /* c style comment */
+#    		// this is a solidus double comment
+#    	}
+#    } -body {
+#	    set ton [ton::json2ton $json];
+#        set h [ton::2huddle::ton2huddle $ton];
+#    } -result {HUDDLE {s {this is a string}}}
+#
+#    test json2ton2huddle-7.4 "test of parsing json comments" -setup {
+#    	set json { 
+#    		// this is a solidus double comment
+#    		[
+#    				//another comment here
+#    			[], 
+#    			{}, 
+#    			/* c style
+#    				comment 
+#    				*/
+#    		
+#    		null, false, true,
+#    		 -5.0e-4]
+#    	}
+#    } -body {
+#	    set ton [ton::json2ton $json];
+#        set h [ton::2huddle::ton2huddle $ton];
+#    } -result {HUDDLE {L {{L {}} {D {}} null {b false} {b true} {num -5.0e-4}}}}
+##<<<<----
+
+    test json2ton2huddle-8.1 "test of parsing complex data structures in json" -setup {
+    	set json {  
+        
+    		{"menu1": {
+    				"id": 234,
+    				"value": "File:",
+    				"unival": "\u6021:",
+    				"popup": {
+    					"menuitem": [
+    						{"value": "Open", "onclick": "OpenDoc()"},
+    						{"value": "Close", "onclick": "CloseDoc()"}
+    						]
+    				}
+    			},
+    		"menu2": {
+    				"selected": true,
+    				"texts": ["open", "close", "save as.."]
+    			
+    			}
+        
+    		} 
+    	}
+    } -body {
+	    set ton [ton::json2ton $json];
+        set h [ton::2huddle::ton2huddle $ton];
+    } -result {HUDDLE {D {menu1 {D {id {num 234} value {s File:} unival {s 怡:} popup {D {menuitem {L {{D {value {s Open} onclick {s OpenDoc()}}} {D {value {s Close} onclick {s CloseDoc()}}}}}}}}} menu2 {D {selected {b true} texts {L {{s open} {s close} {s {save as..}}}}}}}}}
+
+    # This test gets different result than `::huddle::json2huddle`, which throws
+    # an error. `json2ton` gets an empty TON structure and hence a subsequent
+    # `ton2huddle` gets an empty HUDDLE structure.
+    test json2ton2huddle-9.1 "test of no json" -setup {
+    	set json { }
+    } -body {
+	    set ton [ton::json2ton $json];
+        set h [ton::2huddle::ton2huddle $ton];
+    } -result {HUDDLE {}}
+
+    cleanupTests
+
+}
+
+
+# ==================================================
+# Teardown
+# ==================================================
 
 namespace delete ::ton::2huddle::test
 
