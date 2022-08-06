@@ -55,9 +55,69 @@ namespace eval ton::2huddle {
         return [list D $args];
     }
 
+    # converts a TON structure to a HUDDLE structure
     proc ton2huddle ton {
         return [list HUDDLE [eval $ton]];
     }
+
+    # converts a HUDDLE structure to a TON structure
+    proc huddle2ton {huddle_object} {
+        package require huddle;
+        variable types
+    
+        set type [huddle type $huddle_object]
+    
+        switch -- $type {
+            boolean {
+                return [list l [huddle get_stripped $huddle_object]];
+            }
+            number {
+                return [list d [huddle get_stripped $huddle_object]];
+            }
+            null {
+                return {l null};
+            }
+            string {
+                set data [huddle get_stripped $huddle_object]
+    
+                # JSON (and hence TON) permits only oneline string
+                set data [string map {
+                        \n \\n
+                        \t \\t
+                        \r \\r
+                        \b \\b
+                        \f \\f
+                        \\ \\\\
+                        \" \\\"
+                        / \\/
+                    } $data
+                ]
+                return [list s $data];
+            }
+            list {
+                set inner {}
+                set len [huddle llength $huddle_object]
+                for {set i 0} {$i < $len} {incr i} {
+                    set subobject [huddle get $huddle_object $i];
+                    lappend inner "\[[huddle2ton $subobject]\]";
+                }
+                return [concat a [join $inner " "]];
+            }
+            dict {
+                set inner {}
+                foreach {key} [huddle keys $huddle_object] {
+                    lappend inner $key "\[[huddle2ton [huddle get $huddle_object $key]]\]";
+                }
+                return [concat o [join $inner " "]];
+            }
+            default {
+                set node [unwrap $huddle_object]
+                foreach {tag src} $node break
+                return [$types(callback:$tag) huddle2ton $huddle_object]
+            }
+        }
+    }
+
 }
 
 ## set h [ton::2huddle::ton2huddle $ton];

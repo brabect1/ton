@@ -87,8 +87,6 @@ namespace eval ton::2huddle::test {
         set ton {o key1 [s var1] key2 [d 4] key3 [a [l null] [s sadf] [l true]]};
         set h [ton::2huddle::ton2huddle $ton];
     } -result {HUDDLE {D {key1 {s var1} key2 {num 4} key3 {L {null {s sadf} {b true}}}}}}
-
-    cleanupTests
 }
 
 
@@ -302,7 +300,73 @@ namespace eval ton::2huddle::test {
         set h [ton::2huddle::ton2huddle $ton];
     } -result {HUDDLE {}}
 
-    cleanupTests
+}
+
+
+# ==================================================
+# reverse tests for those of huddle2ton
+# ==================================================
+namespace eval ton::2huddle::test {
+
+    test huddle2ton-1.1 "test of simple (1-level) dict" -body {
+        set h {HUDDLE {D {a {s b} c {s d}}}};
+        set ton [ton::2huddle::huddle2ton $h];
+    } -result {o a [s b] c [s d]}
+
+    test huddle2ton-1.2 "test of 2-level dict" -body {
+        set h {HUDDLE {D {bb {D {a {s b} c {s d}}} cc {D {e {s f} g {s h}}}}}};
+        set ton [ton::2huddle::huddle2ton $h];
+    } -result {o bb [o a [s b] c [s d]] cc [o e [s f] g [s h]]}
+
+    test huddle2ton-1.3 "test of 3-level dict" -body {
+        set h {HUDDLE {D {dd {D {bb {D {a {s b} c {s d}}} cc {D {e {s f} g {s h}}}}} ee {D {i {s j} k {s l}}}}}};
+        set ton [ton::2huddle::huddle2ton $h];
+    } -result {o dd [o bb [o a [s b] c [s d]] cc [o e [s f] g [s h]]] ee [o i [s j] k [s l]]}
+
+    test huddle2ton-2.1 "test of simple (1-level) list" -body {
+        set h {HUDDLE {L {{s a} {s b} {s c} {s d}}}};
+        set ton [ton::2huddle::huddle2ton $h];
+    } -result {a [s a] [s b] [s c] [s d]}
+
+    test huddle2ton-2.2 "test of 2-level list" -body {
+        set h {HUDDLE {L {{s i} {L {{s a} {s b} {s c} {s d}}} {s j} {s k} {L {{s e} {s f} {s g} {s h}}}}}};
+        set ton [ton::2huddle::huddle2ton $h];
+    } -result {a [s i] [a [s a] [s b] [s c] [s d]] [s j] [s k] [a [s e] [s f] [s g] [s h]]}
+
+    test huddle2ton-2.3 "test of 3-level list" -body {
+        set h {HUDDLE {L {{L {{s i} {L {{s a} {s b} {s c} {s d}}} {s j} {s k} {L {{s e} {s f} {s g} {s h}}}}} {s t} {s u}}}};
+        set ton [ton::2huddle::huddle2ton $h];
+    } -result {a [a [s i] [a [s a] [s b] [s c] [s d]] [s j] [s k] [a [s e] [s f] [s g] [s h]]] [s t] [s u]}
+
+    test huddle2ton-5.1 "test of boolean" -body {
+        set h {HUDDLE {b true}};
+        set ton [ton::2huddle::huddle2ton $h];
+    } -result {l true}
+
+    test huddle2ton-5.2 "test of boolean" -body {
+        set h {HUDDLE {b false}};
+        set ton [ton::2huddle::huddle2ton $h];
+    } -result {l false}
+
+    test huddle2ton-6.1 "test of null" -body {
+        set h {HUDDLE null};
+        set ton [ton::2huddle::huddle2ton $h];
+    } -result {l null}
+
+    test huddle2ton-7.1 "test of number" -body {
+        set h {HUDDLE {num -4.5E-6}};
+        set ton [ton::2huddle::huddle2ton $h];
+    } -result {d -4.5E-6}
+
+    test huddle2ton-7.2 "test of number" -body {
+        set h {HUDDLE {num 5}};
+        set ton [ton::2huddle::huddle2ton $h];
+    } -result {d 5}
+
+    test huddle2ton-8.1 "test of complex data structure using the new types: number, boolean and null" -body {
+        set h {HUDDLE {D {key1 {s var1} key2 {num 4} key3 {L {null {s sadf} {b true}}}}}};
+        set ton [ton::2huddle::huddle2ton $h];
+    } -result {o key1 [s var1] key2 [d 4] key3 [a [l null] [s sadf] [l true]]}
 
 }
 
@@ -310,6 +374,9 @@ namespace eval ton::2huddle::test {
 # ==================================================
 # Teardown
 # ==================================================
+namespace eval ton::2huddle::test {
+    cleanupTests
+}
 
 namespace delete ::ton::2huddle::test
 
